@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { formatRupiah } from "../utils/formatRupiah";
 
 type Props = {
   service: { id: number; name: string; description?: string | null; price: number; flightDate?: string | null };
@@ -46,7 +47,7 @@ export default function ServiceCard({ service, hideButton = false, onBookClick }
           </div>
           <div className="flex-shrink-0 text-right">
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-white/60">Mulai dari</p>
-            <p className="text-xl font-bold text-amber-300">Rp {service.price.toLocaleString()}</p>
+            <p className="text-xl font-bold text-amber-300">{formatRupiah(service.price)}</p>
           </div>
         </div>
 

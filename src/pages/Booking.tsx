@@ -4,6 +4,8 @@ import api from "../api/api";
 import { useAuth } from "../AuthContext";
 import ServiceCard from "../components/ServiceCard";
 import toast from "react-hot-toast";
+import Modal from "../components/Modal";
+import { formatRupiah } from "../utils/formatRupiah";
 
 type Service = { id: number; name: string; description?: string | null; price: number; flightDate?: string | null };
 
@@ -19,6 +21,7 @@ export default function Booking() {
 
   // Form booking state
   const [showBookingForm, setShowBookingForm] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [passengerName, setPassengerName] = useState("");
   const [passengerEmail, setPassengerEmail] = useState("");
@@ -63,9 +66,7 @@ export default function Booking() {
 
   const handleBookService = (service: Service) => {
     if (!user) {
-      if (confirm("Anda perlu login terlebih dahulu. Ingin login sekarang?")) {
-        navigate("/login");
-      }
+      setShowLoginModal(true);
       return;
     }
     setSelectedService(service);
@@ -174,6 +175,31 @@ export default function Booking() {
         </div>
       </div>
 
+      {/* Login Modal */}
+      <Modal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        title="Akses Terbatas"
+        footer={
+          <>
+            <button
+              onClick={() => setShowLoginModal(false)}
+              className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10"
+            >
+              Nanti Saja
+            </button>
+            <button
+              onClick={() => navigate("/login")}
+              className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-sky-700"
+            >
+              Login Sekarang
+            </button>
+          </>
+        }
+      >
+        <p>Anda perlu login terlebih dahulu untuk melakukan pemesanan tiket. Ingin login sekarang?</p>
+      </Modal>
+
       {/* Booking Form Modal */}
       {showBookingForm && selectedService && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-3 py-6 sm:p-4 backdrop-blur-sm">
@@ -195,7 +221,7 @@ export default function Booking() {
                   Paket yang dipilih
                 </div>
                 <div className="mb-2 text-base sm:text-lg font-semibold text-white">{selectedService.name}</div>
-                <div className="text-xl sm:text-2xl font-bold text-amber-300">Rp {selectedService.price.toLocaleString()}</div>
+                <div className="text-xl sm:text-2xl font-bold text-amber-300">{formatRupiah(selectedService.price)}</div>
                 {selectedService.flightDate && (
                   <div className="mt-2 flex items-center gap-2 text-sm text-white/80">
                     <span className="text-white/60">🛫</span>

@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import api from "../api/api";
 import { useAuth } from "../AuthContext";
 import toast from "react-hot-toast";
+import { formatRupiah } from "../utils/formatRupiah";
 
 type Service = { id: number; name: string; description?: string | null; price: number; flightDate?: string | null };
 type Booking = {
@@ -14,10 +15,12 @@ type Booking = {
 
 const STATUS_OPTIONS = ["pending", "confirmed", "completed", "cancelled"] as const;
 type User = { id: number; name: string; email: string; role: "admin" | "user"; createdAt?: string };
+type Destination = { id: number; name: string; image?: string };
+type Aircraft = { id: number; name: string; type?: string };
 
 export default function Admin() {
   const { user } = useAuth();
-  const [tab, setTab] = useState<"dashboard" | "services" | "bookings" | "users">("dashboard");
+  const [tab, setTab] = useState<"dashboard" | "services" | "bookings" | "users" | "destinations" | "aircrafts">("dashboard");
 
   // Services state
   const [name, setName] = useState("");
@@ -46,6 +49,20 @@ export default function Admin() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editUser, setEditUser] = useState<{ name: string; email: string; password: string; role: "admin" | "user" }>({ name: "", email: "", password: "", role: "user" });
 
+  // Destinations state
+  const [destinations, setDestinations] = useState<Destination[]>([]);
+  const [loadingDestinations, setLoadingDestinations] = useState<boolean>(true);
+  const [newDestination, setNewDestination] = useState<{ name: string; image: string }>({ name: "", image: "" });
+  const [editingDestinationId, setEditingDestinationId] = useState<number | null>(null);
+  const [editDestination, setEditDestination] = useState<{ name: string; image: string }>({ name: "", image: "" });
+
+  // Aircrafts state
+  const [aircrafts, setAircrafts] = useState<Aircraft[]>([]);
+  const [loadingAircrafts, setLoadingAircrafts] = useState<boolean>(true);
+  const [newAircraft, setNewAircraft] = useState<{ name: string; type: string }>({ name: "", type: "" });
+  const [editingAircraftId, setEditingAircraftId] = useState<number | null>(null);
+  const [editAircraft, setEditAircraft] = useState<{ name: string; type: string }>({ name: "", type: "" });
+
   const loadServices = async () => {
     setLoadingServices(true);
     try {
@@ -70,7 +87,121 @@ export default function Admin() {
     loadServices();
     loadBookings();
     loadUsers();
+    loadDestinations();
+    loadAircrafts();
   }, []);
+
+  const loadDestinations = async () => {
+    setLoadingDestinations(true);
+    try {
+      const res = await api.get("/destinations");
+      setDestinations(res.data);
+    } finally {
+      setLoadingDestinations(false);
+    }
+  };
+
+  const createDestination = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newDestination.name) return toast.error("Nama tujuan diperlukan");
+    try {
+      await api.post("/destinations", newDestination);
+      setNewDestination({ name: "", image: "" });
+      await loadDestinations();
+      toast.success("Tujuan dibuat");
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message ?? "Gagal membuat tujuan");
+    }
+  };
+
+  const deleteDestination = async (id: number) => {
+    if (!confirm("Hapus tujuan ini?")) return;
+    try {
+      await api.delete(`/destinations/${id}`);
+      await loadDestinations();
+      toast.success("Tujuan dihapus");
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message ?? "Gagal menghapus tujuan");
+    }
+  };
+
+  const startEditDestination = (d: Destination) => {
+    setEditingDestinationId(d.id);
+    setEditDestination({ name: d.name, image: d.image || "" });
+  };
+
+  const cancelEditDestination = () => {
+    setEditingDestinationId(null);
+    setEditDestination({ name: "", image: "" });
+  };
+
+  const saveEditDestination = async (id: number) => {
+    if (!editDestination.name) return toast.error("Nama tujuan diperlukan");
+    try {
+      await api.patch(`/destinations/${id}`, editDestination);
+      await loadDestinations();
+      cancelEditDestination();
+      toast.success("Tujuan diperbarui");
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message ?? "Gagal memperbarui tujuan");
+    }
+  };
+
+  const loadAircrafts = async () => {
+    setLoadingAircrafts(true);
+    try {
+      const res = await api.get("/aircrafts");
+      setAircrafts(res.data);
+    } finally {
+      setLoadingAircrafts(false);
+    }
+  };
+
+  const createAircraft = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAircraft.name) return toast.error("Nama pesawat diperlukan");
+    try {
+      await api.post("/aircrafts", newAircraft);
+      setNewAircraft({ name: "", type: "" });
+      await loadAircrafts();
+      toast.success("Pesawat dibuat");
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message ?? "Gagal membuat pesawat");
+    }
+  };
+
+  const deleteAircraft = async (id: number) => {
+    if (!confirm("Hapus pesawat ini?")) return;
+    try {
+      await api.delete(`/aircrafts/${id}`);
+      await loadAircrafts();
+      toast.success("Pesawat dihapus");
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message ?? "Gagal menghapus pesawat");
+    }
+  };
+
+  const startEditAircraft = (a: Aircraft) => {
+    setEditingAircraftId(a.id);
+    setEditAircraft({ name: a.name, type: a.type || "" });
+  };
+
+  const cancelEditAircraft = () => {
+    setEditingAircraftId(null);
+    setEditAircraft({ name: "", type: "" });
+  };
+
+  const saveEditAircraft = async (id: number) => {
+    if (!editAircraft.name) return toast.error("Nama pesawat diperlukan");
+    try {
+      await api.patch(`/aircrafts/${id}`, editAircraft);
+      await loadAircrafts();
+      cancelEditAircraft();
+      toast.success("Pesawat diperbarui");
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message ?? "Gagal memperbarui pesawat");
+    }
+  };
 
   const create = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -214,12 +345,7 @@ export default function Admin() {
       minute: "2-digit",
     });
 
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      maximumFractionDigits: 0,
-    }).format(value);
+
 
   // Dashboard statistics
   const stats = useMemo(() => {
@@ -362,7 +488,7 @@ export default function Admin() {
             }`}
           onClick={() => setTab("services")}
         >
-          ✈️ Layanan
+          ℹ️ Layanan
         </button>
         <button
           className={`px-4 py-2 rounded-t-lg text-sm font-medium transition-all ${tab === "bookings"
@@ -381,6 +507,24 @@ export default function Admin() {
           onClick={() => setTab("users")}
         >
           👥 Users
+        </button>
+        <button
+          className={`px-4 py-2 rounded-t-lg text-sm font-medium transition-all ${tab === "destinations"
+            ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg"
+            : "bg-white/10 text-slate-200 hover:bg-white/15"
+            }`}
+          onClick={() => setTab("destinations")}
+        >
+          📍 Tujuan
+        </button>
+        <button
+          className={`px-4 py-2 rounded-t-lg text-sm font-medium transition-all ${tab === "aircrafts"
+            ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg"
+            : "bg-white/10 text-slate-200 hover:bg-white/15"
+            }`}
+          onClick={() => setTab("aircrafts")}
+        >
+          ✈️ Pesawat
         </button>
       </div>
 
@@ -423,7 +567,7 @@ export default function Admin() {
                 <div className="text-sm font-medium text-white/70">Total Revenue</div>
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20 text-xl">💰</div>
               </div>
-              <div className="text-2xl font-bold text-white">{formatCurrency(stats.totalRevenue)}</div>
+              <div className="text-2xl font-bold text-white">{formatRupiah(stats.totalRevenue)}</div>
               <div className="mt-2 text-xs text-white/60">Pendapatan total</div>
             </div>
           </div>
@@ -516,11 +660,33 @@ export default function Admin() {
             <form onSubmit={create} className="space-y-4 rounded-xl border border-white/10 bg-black/30 p-6 shadow-sm">
               <div className="space-y-1">
                 <label className="text-sm font-medium text-slate-300">Tujuan</label>
-                <input className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-slate-400" value={name} onChange={(e) => setName(e.target.value)} />
+                <select
+                  className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-white"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                >
+                  <option value="" disabled>Pilih Tujuan</option>
+                  {destinations.map((d) => (
+                    <option key={d.id} value={d.name} className="bg-slate-800">
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="space-y-1">
                 <label className="text-sm font-medium text-slate-300">Pesawat Yang Digunakan</label>
-                <textarea className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-slate-400" value={description} onChange={(e) => setDescription(e.target.value)} />
+                <select
+                  className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-white"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                >
+                  <option value="" disabled>Pilih Pesawat</option>
+                  {aircrafts.map((a) => (
+                    <option key={a.id} value={a.name} className="bg-slate-800">
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="space-y-1">
                 <label className="text-sm font-medium text-slate-300">
@@ -557,20 +723,33 @@ export default function Admin() {
                       <div className="space-y-3">
                         <div>
                           <label className="mb-1 block text-xs font-medium text-slate-300">Tujuan</label>
-                          <input
+                          <select
                             className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
                             value={editService.name}
                             onChange={(e) => setEditService({ ...editService, name: e.target.value })}
-                          />
+                          >
+                            <option value="">Pilih Tujuan</option>
+                            {destinations.map((d) => (
+                              <option key={d.id} value={d.name} className="bg-slate-800">
+                                {d.name}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                         <div>
                           <label className="mb-1 block text-xs font-medium text-slate-300">Pesawat Yang Digunakan</label>
-                          <textarea
+                          <select
                             className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
                             value={editService.description}
                             onChange={(e) => setEditService({ ...editService, description: e.target.value })}
-                            rows={2}
-                          />
+                          >
+                            <option value="">Pilih Pesawat</option>
+                            {aircrafts.map((a) => (
+                              <option key={a.id} value={a.name} className="bg-slate-800">
+                                {a.name}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                         <div>
                           <label className="mb-1 block text-xs font-medium text-slate-300">Tanggal &amp; Jam Terbang</label>
@@ -616,7 +795,7 @@ export default function Admin() {
                               <span>{formatBookingDate(s.flightDate)}</span>
                             </div>
                           )}
-                          <div className="mt-2 text-base font-semibold text-amber-300">Rp {s.price.toLocaleString()}</div>
+                          <div className="mt-2 text-base font-semibold text-amber-300">{formatRupiah(s.price)}</div>
                         </div>
                         <div className="flex gap-2 pt-3 border-t border-white/10">
                           <button
@@ -799,55 +978,259 @@ export default function Admin() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {users.map((u) => (
                   <div key={u.id} className="flex flex-col gap-3 rounded-xl border border-white/10 bg-black/30 p-4 shadow-sm">
-                    <div className="flex-1">
-                      {editingId === u.id ? (
-                        <div className="space-y-3">
-                          <div>
-                            <label className="text-xs text-slate-300 mb-1 block">Nama</label>
-                            <input className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" value={editUser.name} onChange={(e) => setEditUser({ ...editUser, name: e.target.value })} />
-                          </div>
-                          <div>
-                            <label className="text-xs text-slate-300 mb-1 block">Email</label>
-                            <input type="email" className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" value={editUser.email} onChange={(e) => setEditUser({ ...editUser, email: e.target.value })} />
-                          </div>
-                          <div>
-                            <label className="text-xs text-slate-300 mb-1 block">Password baru (opsional)</label>
-                            <input type="password" className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" value={editUser.password} onChange={(e) => setEditUser({ ...editUser, password: e.target.value })} />
-                          </div>
-                          <div>
-                            <label className="text-xs text-slate-300 mb-1 block">Role</label>
-                            <select className="w-full rounded-md border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white" value={editUser.role} onChange={(e) => setEditUser({ ...editUser, role: e.target.value as any })}>
-                              <option value="user" className="bg-slate-800 text-white">user</option>
-                              <option value="admin" className="bg-slate-800 text-white">admin</option>
-                            </select>
-                          </div>
-                          <div className="flex gap-2 pt-2 border-t border-white/10">
-                            <button onClick={() => saveEdit(u.id)} className="flex-1 rounded-md bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700">Simpan</button>
-                            <button onClick={cancelEdit} className="flex-1 rounded-md bg-white/10 px-3 py-2 text-sm font-medium text-slate-200 hover:bg-white/15">Batal</button>
+                    {editingId === u.id ? (
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-xs text-slate-300 mb-1 block">Nama</label>
+                          <input className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" value={editUser.name} onChange={(e) => setEditUser({ ...editUser, name: e.target.value })} />
+                        </div>
+                        <div>
+                          <label className="text-xs text-slate-300 mb-1 block">Email</label>
+                          <input type="email" className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" value={editUser.email} onChange={(e) => setEditUser({ ...editUser, email: e.target.value })} />
+                        </div>
+                        <div>
+                          <label className="text-xs text-slate-300 mb-1 block">Password baru (opsional)</label>
+                          <input type="password" className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" value={editUser.password} onChange={(e) => setEditUser({ ...editUser, password: e.target.value })} />
+                        </div>
+                        <div>
+                          <label className="text-xs text-slate-300 mb-1 block">Role</label>
+                          <select className="w-full rounded-md border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white" value={editUser.role} onChange={(e) => setEditUser({ ...editUser, role: e.target.value as any })}>
+                            <option value="user" className="bg-slate-800 text-white">user</option>
+                            <option value="admin" className="bg-slate-800 text-white">admin</option>
+                          </select>
+                        </div>
+                        <div className="flex gap-2 pt-2 border-t border-white/10">
+                          <button onClick={() => saveEdit(u.id)} className="flex-1 rounded-md bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700">Simpan</button>
+                          <button onClick={cancelEdit} className="flex-1 rounded-md bg-white/10 px-3 py-2 text-sm font-medium text-slate-200 hover:bg-white/15">Batal</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="mb-2">
+                          <div className="font-medium text-white">{u.name}</div>
+                          <div className="text-sm text-slate-300 mt-1">{u.email}</div>
+                          <div className="text-xs text-slate-400 mt-1">
+                            Role: <span className={`font-semibold ${u.role === "admin" ? "text-amber-400" : "text-blue-400"}`}>{u.role}</span>
                           </div>
                         </div>
-                      ) : (
-                        <>
-                          <div className="mb-2">
-                            <div className="font-medium text-white">{u.name}</div>
-                            <div className="text-sm text-slate-300 mt-1">{u.email}</div>
-                            <div className="text-xs text-slate-400 mt-1">
-                              Role: <span className={`font-semibold ${u.role === "admin" ? "text-amber-400" : "text-blue-400"}`}>{u.role}</span>
-                            </div>
+                        <div className="flex flex-col gap-2 pt-3 border-t border-white/10">
+                          <select className="w-full rounded-md border border-white/10 bg-slate-800 text-white px-3 py-2 text-sm" value={u.role} onChange={(e) => updateUserRole(u.id, e.target.value as any)}>
+                            <option value="user" className="bg-slate-800 text-white">user</option>
+                            <option value="admin" className="bg-slate-800 text-white">admin</option>
+                          </select>
+                          <div className="flex gap-2">
+                            <button onClick={() => startEdit(u)} className="flex-1 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700">Edit</button>
+                            <button onClick={() => deleteUser(u.id)} className="flex-1 rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700">Hapus</button>
                           </div>
-                          <div className="flex flex-col gap-2 pt-3 border-t border-white/10">
-                            <select className="w-full rounded-md border border-white/10 bg-slate-800 text-white px-3 py-2 text-sm" value={u.role} onChange={(e) => updateUserRole(u.id, e.target.value as any)}>
-                              <option value="user" className="bg-slate-800 text-white">user</option>
-                              <option value="admin" className="bg-slate-800 text-white">admin</option>
-                            </select>
-                            <div className="flex gap-2">
-                              <button onClick={() => startEdit(u)} className="flex-1 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700">Edit</button>
-                              <button onClick={() => deleteUser(u.id)} className="flex-1 rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700">Hapus</button>
-                            </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {tab === "destinations" && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1">
+            <h2 className="text-xl font-semibold mb-3 text-white">Buat Tujuan</h2>
+            <form onSubmit={createDestination} className="space-y-4 rounded-xl border border-white/10 bg-black/30 p-6 shadow-sm">
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-slate-300">Tujuan</label>
+                <input
+                  className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-slate-400"
+                  value={newDestination.name}
+                  onChange={(e) => setNewDestination({ ...newDestination, name: e.target.value })}
+                  placeholder="Contoh: Jakarta"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-slate-300">URL Gambar (Opsional)</label>
+                <input
+                  className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-slate-400"
+                  value={newDestination.image}
+                  onChange={(e) => setNewDestination({ ...newDestination, image: e.target.value })}
+                  placeholder="https://..."
+                />
+              </div>
+              <button className="w-full rounded-md bg-indigo-600 py-2 text-white hover:bg-indigo-700">Simpan</button>
+            </form>
+          </div>
+          <div className="lg:col-span-2">
+            <h2 className="text-xl font-semibold mb-3 text-white">Daftar Tujuan</h2>
+            {loadingDestinations ? (
+              <div className="text-slate-300">Memuat...</div>
+            ) : destinations.length === 0 ? (
+              <div className="rounded-xl border border-white/10 bg-black/30 p-6 text-center text-slate-300">
+                Belum ada tujuan.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {destinations.map((d) => (
+                  <div key={d.id} className="rounded-xl border border-white/10 bg-black/30 p-4 shadow-sm">
+                    {editingDestinationId === d.id ? (
+                      <div className="space-y-3">
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-300">Nama Kota</label>
+                          <input
+                            className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+                            value={editDestination.name}
+                            onChange={(e) => setEditDestination({ ...editDestination, name: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-300">URL Gambar</label>
+                          <input
+                            className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+                            value={editDestination.image}
+                            onChange={(e) => setEditDestination({ ...editDestination, image: e.target.value })}
+                          />
+                        </div>
+                        <div className="flex gap-2 pt-2">
+                          <button
+                            onClick={() => saveEditDestination(d.id)}
+                            className="flex-1 rounded-md bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700"
+                          >
+                            Simpan
+                          </button>
+                          <button
+                            onClick={cancelEditDestination}
+                            className="flex-1 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm font-medium text-white hover:bg-white/10"
+                          >
+                            Batal
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="mb-3 flex items-start gap-3">
+                          {d.image && (
+                            <img src={d.image} alt={d.name} className="h-16 w-16 rounded-md object-cover bg-white/10" />
+                          )}
+                          <div>
+                            <div className="font-medium text-white">{d.name}</div>
                           </div>
-                        </>
-                      )}
-                    </div>
+                        </div>
+                        <div className="flex gap-2 pt-3 border-t border-white/10">
+                          <button
+                            onClick={() => startEditDestination(d)}
+                            className="flex-1 rounded-md bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => deleteDestination(d.id)}
+                            className="flex-1 rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
+                          >
+                            Hapus
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {tab === "aircrafts" && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1">
+            <h2 className="text-xl font-semibold mb-3 text-white">Buat Pesawat</h2>
+            <form onSubmit={createAircraft} className="space-y-4 rounded-xl border border-white/10 bg-black/30 p-6 shadow-sm">
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-slate-300">Nama Maskapai</label>
+                <input
+                  className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-slate-400"
+                  value={newAircraft.name}
+                  onChange={(e) => setNewAircraft({ ...newAircraft, name: e.target.value })}
+                  placeholder="Contoh: Garuda Indonesia"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-slate-300">Tipe Pesawat (Opsional)</label>
+                <input
+                  className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-white placeholder:text-slate-400"
+                  value={newAircraft.type}
+                  onChange={(e) => setNewAircraft({ ...newAircraft, type: e.target.value })}
+                  placeholder="Contoh: Boeing 737"
+                />
+              </div>
+              <button className="w-full rounded-md bg-indigo-600 py-2 text-white hover:bg-indigo-700">Simpan</button>
+            </form>
+          </div>
+          <div className="lg:col-span-2">
+            <h2 className="text-xl font-semibold mb-3 text-white">Daftar Pesawat</h2>
+            {loadingAircrafts ? (
+              <div className="text-slate-300">Memuat...</div>
+            ) : aircrafts.length === 0 ? (
+              <div className="rounded-xl border border-white/10 bg-black/30 p-6 text-center text-slate-300">
+                Belum ada pesawat.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {aircrafts.map((a) => (
+                  <div key={a.id} className="rounded-xl border border-white/10 bg-black/30 p-4 shadow-sm">
+                    {editingAircraftId === a.id ? (
+                      <div className="space-y-3">
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-300">Nama Maskapai</label>
+                          <input
+                            className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+                            value={editAircraft.name}
+                            onChange={(e) => setEditAircraft({ ...editAircraft, name: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-300">Tipe Pesawat</label>
+                          <input
+                            className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+                            value={editAircraft.type}
+                            onChange={(e) => setEditAircraft({ ...editAircraft, type: e.target.value })}
+                          />
+                        </div>
+                        <div className="flex gap-2 pt-2">
+                          <button
+                            onClick={() => saveEditAircraft(a.id)}
+                            className="flex-1 rounded-md bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700"
+                          >
+                            Simpan
+                          </button>
+                          <button
+                            onClick={cancelEditAircraft}
+                            className="flex-1 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm font-medium text-white hover:bg-white/10"
+                          >
+                            Batal
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="mb-3">
+                          <div className="font-medium text-white">{a.name}</div>
+                          {a.type && <div className="mt-1 text-sm text-slate-300">{a.type}</div>}
+                        </div>
+                        <div className="flex gap-2 pt-3 border-t border-white/10">
+                          <button
+                            onClick={() => startEditAircraft(a)}
+                            className="flex-1 rounded-md bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => deleteAircraft(a.id)}
+                            className="flex-1 rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
+                          >
+                            Hapus
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
