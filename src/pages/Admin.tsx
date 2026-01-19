@@ -424,10 +424,16 @@ export default function Admin() {
   };
 
   const deleteUser = async (id: number) => {
+    const user = users.find(u => u.id === id);
+    if (user?.role === "admin") {
+      toast.error("User dengan role admin tidak dapat dihapus");
+      return;
+    }
     if (!confirm("Hapus user ini?")) return;
     try {
       await api.delete(`/users/${id}`);
       await loadUsers();
+      toast.success("User berhasil dihapus");
     } catch (e: any) {
       toast.error(e?.response?.data?.message ?? "Gagal menghapus user");
     }
@@ -1020,7 +1026,12 @@ export default function Admin() {
                           </select>
                           <div className="flex gap-2">
                             <button onClick={() => startEdit(u)} className="flex-1 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700">Edit</button>
-                            <button onClick={() => deleteUser(u.id)} className="flex-1 rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700">Hapus</button>
+                            {u.role !== "admin" && (
+                              <button onClick={() => deleteUser(u.id)} className="flex-1 rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700">Hapus</button>
+                            )}
+                            {u.role === "admin" && (
+                              <button disabled className="flex-1 rounded-md bg-gray-600 px-3 py-2 text-sm font-medium text-gray-400 cursor-not-allowed">Hapus</button>
+                            )}
                           </div>
                         </div>
                       </>
