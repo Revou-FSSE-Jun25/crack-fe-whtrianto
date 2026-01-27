@@ -218,71 +218,65 @@ export default function Dashboard() {
         )}
 
         {!loading && bookings.length > 0 && (
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
             {bookings.map((booking) => {
               const statusInfo = getStatusInfo(booking.status);
 
               return (
                 <div
                   key={booking.id}
-                  className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-1 backdrop-blur-md transition-all hover:border-white/20 hover:shadow-xl hover:shadow-blue-500/5"
+                  className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm transition-all hover:bg-white/[0.07] hover:border-white/20 hover:shadow-xl"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100"></div>
+                  {/* Decorative Gradient Background */}
+                  <div className={`absolute -right-20 -top-20 h-64 w-64 rounded-full bg-${statusInfo.badgeClass.split(" ")[1].replace('bg-', '')} opacity-10 blur-3xl group-hover:opacity-20 transition-all duration-500`}></div>
 
-                  <div className="relative flex flex-col gap-6 rounded-xl bg-slate-900/40 p-5 sm:flex-row sm:items-center sm:p-6">
-                    {/* Icon Box */}
-                    <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border border-white/5 shadow-inner">
-                      <span className="text-3xl">✈️</span>
-                    </div>
-
-                    {/* Main Info */}
-                    <div className="flex-1 space-y-3">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <span className="inline-flex items-center rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-slate-400">
-                          #{String(booking.id).padStart(5, "0")}
-                        </span>
-                        <div className={`inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-xs font-medium border ${statusInfo.badgeClass}`}>
-                          {statusInfo.icon && <span className="opacity-75">{statusInfo.icon}</span>}
-                          {statusInfo.label}
+                  <div className="relative p-6 flex flex-col h-full">
+                    {/* Header: ID and Status */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border border-white/5">
+                          <span className="text-xl">✈️</span>
+                        </div>
+                        <div>
+                          <span className="block text-xs font-medium text-slate-400 uppercase tracking-wider">Booking ID</span>
+                          <span className="font-mono text-sm text-white/90">#{String(booking.id).padStart(5, "0")}</span>
                         </div>
                       </div>
-
-                      <div>
-                        <h3 className="text-xl font-bold text-white group-hover:text-blue-200 transition-colors">
-                          {booking.service?.name || "Layanan Tidak Tersedia"}
-                        </h3>
-                        {booking.service?.price && (
-                          <div className="mt-1 text-sm font-medium text-amber-400/90">
-                            {formatRupiah(booking.service.price)}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-400">
-                        <div className="flex items-center gap-2">
-                          <span className="text-slate-500">🗓</span>
-                          <span>{formatBookingDate(booking.date)}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-slate-500">👤</span>
-                          <span>{user?.name}</span>
-                        </div>
+                      <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${statusInfo.badgeClass}`}>
+                        {statusInfo.icon && <span>{statusInfo.icon}</span>}
+                        {statusInfo.label}
                       </div>
                     </div>
 
-                    {/* Action */}
-                    <div className="flex flex-col gap-3 sm:items-end sm:border-l sm:border-white/10 sm:pl-6 sm:py-2">
-                      {statusInfo.message && (
-                        <div className="hidden lg:block max-w-xs text-right text-xs text-slate-400 italic">
-                          "{statusInfo.message}"
+                    {/* Content: Service & Price */}
+                    <div className="mb-6 space-y-1">
+                      <h3 className="text-xl font-bold text-white group-hover:text-blue-200 transition-colors">
+                        {booking.service?.name || "Layanan Tidak Tersedia"}
+                      </h3>
+                      {booking.service?.price && (
+                        <div className="text-lg font-medium text-emerald-400">
+                          {formatRupiah(booking.service.price)}
                         </div>
                       )}
+                    </div>
+
+                    {/* Footer: Details & Action */}
+                    <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
+                      <div className="flex flex-col gap-1 text-sm text-slate-400">
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-500 text-base">🗓</span>
+                          <span>{formatBookingDate(booking.date)}</span>
+                        </div>
+                      </div>
+
                       <Link
                         to="/booking"
-                        className="group/btn inline-flex items-center justify-center gap-2 rounded-xl bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-white/10 hover:scale-105 active:scale-95 border border-white/10"
+                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-white/20 hover:scale-105 active:scale-95"
                       >
                         Detail
-                        <span className="text-slate-400 transition-transform group-hover/btn:translate-x-0.5">→</span>
+                        <svg className="w-4 h-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
                       </Link>
                     </div>
                   </div>
