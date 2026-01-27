@@ -23,7 +23,7 @@ export default function ServiceCard({ service, hideButton = false, onBookClick }
       <div className="absolute inset-0 bg-gradient-to-br from-sky-500/20 via-transparent to-indigo-500/10 opacity-0 transition group-hover:opacity-100" />
       <div className="relative flex flex-1 flex-col gap-4">
         {/* Header Section */}
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-3">
           <div className="flex-1 space-y-1.5">
             <h3 className="text-lg font-semibold text-white leading-tight">{service.name}</h3>
             <p className="text-sm text-white/70 leading-relaxed">
@@ -45,8 +45,8 @@ export default function ServiceCard({ service, hideButton = false, onBookClick }
               </div>
             )}
           </div>
-          <div className="flex-shrink-0 text-right">
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-white/60">Mulai dari</p>
+          <div className="flex-shrink-0 text-left border-t border-white/10 pt-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-white/60 mb-1">Mulai dari</p>
             <p className="text-xl font-bold text-amber-300">{formatRupiah(service.price)}</p>
           </div>
         </div>
